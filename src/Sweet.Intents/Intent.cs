@@ -1,103 +1,150 @@
+using Sweet.Collections.Unsafe.List;
+using Sweet.Intents.Generated;
+using Sweet.Intents.Actions;
+using Sweet.Intents.Axes;
 using System.Numerics;
 using Silk.NET.GLFW;
+using Silk.NET.Core.Native;
+using System.Runtime.InteropServices;
+using System.Drawing;
 
 namespace Sweet.Intents;
 
 public unsafe static class Intent
 {
+    private static IntentBuilder builder;
     private static WindowHandle* window;
     private static Glfw glfw;
-
-    public static Vector2 MousePosition;
-    public static Vector2 MouseDelta;
-
-    private static Vector2 _lastMousePosition;
-
-    public static int Width;
-    public static int Height;
 
     public static void Init(WindowHandle* _window, Glfw _glfw)
     {
         window = _window;
         glfw = _glfw;
 
-        glfw.SetInputMode(window, CursorStateAttribute.Cursor, CursorModeValue.CursorNormal);
+        builder = new();
 
-        UpdateWindowSize();
+        EditorCameraIntents.Build(ref builder);
 
-        SetMousePosition(new Vector2(Width / 2, Height / 2));
+        glfw.SetKeyCallback(window, KeyCallback);
     }
 
-    private static void UpdateWindowSize()
+    private static void KeyCallback(WindowHandle* window, Keys key, int scanCode, InputAction inputAction, KeyModifiers mods)
     {
-        glfw.GetWindowSize(window, out int _width, out int _height);
+        ref UnsafeList<Actions.Action> actions = ref builder.Keys[(uint)key];
 
-        Width = _width;
-        Height = _height;
-    }
-
-    public static void Update(bool isMouseRight)
-    {
-        UpdateWindowSize();
-
-        glfw.GetCursorPos(window, out double x, out double y);
-
-        if (isMouseRight && (x < 0 || x > Width || y < 0 || y > Height))
+        if (inputAction == InputAction.Press)
         {
-            if (x < 0)
-                x = Width;
-            if (x > Width)
-                x = 0;
+            for (uint i = 0; i < actions.Length; i++)
+            {
+                ref Actions.Action action = ref actions[i];
 
-            if (y < 0)
-                y = Height;
-            if (y > Height)
-                y = 0;
+                if (!action.IsDowned)
+                {
+                    ref Clause clause = ref action.State->Clauses[action.ClauseIndex];
 
-            glfw.SetCursorPos(window, x, y);
+                    action.IsDowned = true;
 
-            _lastMousePosition = new Vector2((float)x, (float)y);
-            MousePosition = _lastMousePosition;
-            MouseDelta = Vector2.Zero;
+                    bool wasActive = clause.IsSatisfied;
 
-            return;
+                    clause.Current++;
+
+                    if (!wasActive && clause.IsSatisfied)
+                        action.State->SatisfiedClauses++;
+
+                    Console.WriteLine();
+                    Console.WriteLine($"Downed Key: {key}");
+                    Console.WriteLine($"current: {clause.Current}");
+                    Console.WriteLine($"active: {action.State->SatisfiedClauses}");
+                }
+            }
         }
+        else if (inputAction == InputAction.Release)
+        {
+            for (uint i = 0; i < actions.Length; i++)
+            {
+                ref Actions.Action action = ref actions[i];
 
-        MousePosition = new Vector2((float)x, (float)y);
-        MouseDelta = MousePosition - _lastMousePosition;
-        _lastMousePosition = MousePosition;
+                if (action.IsDowned)
+                {
+                    ref Clause clause = ref action.State->Clauses[action.ClauseIndex];
+
+                    action.IsDowned = false;
+
+                    bool wasActive = clause.IsSatisfied;
+
+                    clause.Current--;
+
+                    if (wasActive && !clause.IsSatisfied)
+                        action.State->SatisfiedClauses--;
+
+                    Console.WriteLine();
+                    Console.WriteLine($"Upped Key: {key}");
+                    Console.WriteLine($"current: {clause.Current}");
+                    Console.WriteLine($"active: {action.State->SatisfiedClauses}");
+                }
+            }
+        }
+        else if (inputAction == InputAction.Repeat)
+        {
+
+        }
+        else
+        {
+
+        }
     }
 
-    public static void SetMousePosition(Vector2 position)
-    {
-        glfw.SetCursorPos(window, position.X, position.Y);
-
-        _lastMousePosition = position;
-        MousePosition = position;
-        MouseDelta = Vector2.Zero;
-    }
-
-    public static bool GetKeyDown(Keys key)
+    public static bool IsDown(Keys key)
     {
         return InputAction.Press == (InputAction)glfw.GetKey(window, key);
     }
 
-    public static bool GetKeyUp(Keys key)
+    public static bool IsUp(Keys key)
     {
         return InputAction.Release == (InputAction)glfw.GetKey(window, key);
     }
 
-    public static bool GetKey(Keys key)
+    public static bool IsPressed(Keys key)
     {
         var state = (InputAction)glfw.GetKey(window, key);
 
         return InputAction.Press == state || InputAction.Repeat == state;
     }
 
-    public static bool GetKeyMouse(MouseButton button)
+    private static void MouseCallback()
+    {
+
+    }
+
+    public static ref Vector2 GetAxis(AxisState* axisState)
+    {
+        return ref axisState->Value;
+    }
+
+    public static bool IsDown(ActionState* actionState)
+    {
+        return actionState->IsDown;
+    }
+
+    /*public static bool IsUp(ActionState* actionState)
+    {
+        return actionState->Up.IsKey;
+    }
+
+    public static bool IsPressed(ActionState* actionState)
+    {
+        return actionState->Pressed.IsKey;
+    }*/
+
+    public static bool IsMouse(MouseButton button)
     {
         var state = (InputAction)glfw.GetMouseButton(window, (int)button);
 
         return InputAction.Press == state || InputAction.Repeat == state;
+    }
+
+    public static void Dispose()
+    {
+        builder.Dispose();
     }
 }
