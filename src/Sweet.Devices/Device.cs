@@ -1,5 +1,6 @@
+// Copyright © 2026 Zynres.
+
 using System.Runtime.InteropServices;
-using System.Numerics;
 using Silk.NET.GLFW;
 
 namespace Sweet.Devices;

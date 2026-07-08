@@ -1,12 +1,11 @@
+// Copyright © 2026 Zynres.
+
 using Sweet.Collections.Unsafe.List;
 using Sweet.Intents.Generated;
 using Sweet.Intents.Actions;
 using Sweet.Intents.Axes;
 using System.Numerics;
 using Silk.NET.GLFW;
-using Silk.NET.Core.Native;
-using System.Runtime.InteropServices;
-using System.Drawing;
 
 namespace Sweet.Intents;
 
