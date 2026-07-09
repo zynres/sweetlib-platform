@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-      <PackageReference Include="Silk.Net.GLFW" Version="2.22.0" />
+    <PackageReference Include="Silk.Net.GLFW" Version="2.22.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sweet.Intents\Sweet.Intents.csproj" /> 
   </ItemGroup>
 </Project>

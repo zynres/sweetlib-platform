@@ -1,5 +1,6 @@
 // Copyright © 2026 Zynres.
 
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Silk.NET.GLFW;
 
@@ -9,6 +10,7 @@ public unsafe static class Device
 {
     public static WindowDevice* Window { get; private set; }
     public static MouseDevice* Mouse { get; private set; }
+    public static Time* Time { get; private set; }
 
     private static WindowHandle* window;
     private static Glfw glfw;
@@ -27,13 +29,18 @@ public unsafe static class Device
         *Mouse = new MouseDevice();
 
         Mouse->Init(glfw, window, in Window->Size);
+
+        Time = (Time*)NativeMemory.Alloc((nuint)sizeof(Time));
+        *Time = new Time();
     }
 
-    public static void Update(bool isMouseRight)
+    public static void Update()
     {
+        Time->Update(glfw);
+        
         Window->UpdateWindowSize(glfw, window);
 
-        Mouse->WrapCursor(glfw, window, isMouseRight, in Window->Size);
+        Mouse->WrapCursor(glfw, window, in Window->Size);
     }
 
     public static void Dispose()
