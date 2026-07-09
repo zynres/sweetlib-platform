@@ -12,8 +12,8 @@ namespace Sweet.Intents.Generated;
 /// </summary>
 public unsafe class EditorCameraIntents : IDisposable
 {
+    public static ActionState* MoveState { get; private set; }
     public static ActionState* Sprint { get; private set; }
-    public static ActionState* Move { get; private set; }
 
     public static AxisState* MoveForward { get; private set; }
     public static AxisState* MoveRight { get; private set; }
@@ -22,49 +22,58 @@ public unsafe class EditorCameraIntents : IDisposable
     internal static void Build(ref IntentBuilder builder)
     {
         // Acion states
+        MoveState = (ActionState*)NativeMemory.Alloc((nuint)sizeof(ActionState));
+        *MoveState = new ActionState(1); // value changing from .intents file
+
+        MoveState->Clauses.Add(new Clause(1)); // 0
+
+        builder.Bind(MouseButton.Right, MoveState, 0);
+
         Sprint = (ActionState*)NativeMemory.Alloc((nuint)sizeof(ActionState));
-        *Sprint = new ActionState(2); // value changing from .intents file
+        *Sprint = new ActionState(1); // value changing from .intents file
 
         Sprint->Clauses.Add(new Clause(1)); // 0
-        Sprint->Clauses.Add(new Clause(1)); // 1
 
         builder.Bind(Keys.ShiftLeft, Sprint, 0);
-
-        builder.Bind(Keys.W, Sprint, 1);
-        builder.Bind(Keys.A, Sprint, 1);
-        builder.Bind(Keys.S, Sprint, 1);
-        builder.Bind(Keys.D, Sprint, 1);
-
-        Move = (ActionState*)NativeMemory.Alloc((nuint)sizeof(ActionState));
-        *Move = new ActionState(1); // value changing from .intents file
-
-        Move->Clauses.Add(new Clause(1)); // 0
-
-        builder.Bind(Keys.W, Move, 0);
-        builder.Bind(Keys.A, Move, 0);
-        builder.Bind(Keys.S, Move, 0);
-        builder.Bind(Keys.D, Move, 0);
 
         // Axis states
         MoveForward = (AxisState*)NativeMemory.Alloc((nuint)sizeof(AxisState));
         *MoveForward = new AxisState();
 
+        builder.Bind(Keys.W, MoveForward, true);
+        builder.Bind(Keys.S, MoveForward, false);
+
         MoveRight = (AxisState*)NativeMemory.Alloc((nuint)sizeof(AxisState));
         *MoveRight = new AxisState();
 
+        builder.Bind(Keys.D, MoveRight, true);
+        builder.Bind(Keys.A, MoveRight, false);
+
         MoveUp = (AxisState*)NativeMemory.Alloc((nuint)sizeof(AxisState));
         *MoveUp = new AxisState();
+
+        builder.Bind(Keys.E, MoveUp, true);
+        builder.Bind(Keys.Q, MoveUp, false);
 
         builder.KickBack += KickBack;
     }
 
     private static void KickBack()
     {
-
+        MoveState->IsRelease = false;
+        Sprint->IsRelease = false;
     }
 
     public void Dispose()
     {
+        if (MoveState != null)
+        {
+            MoveState->Dispose();
+            NativeMemory.Free(MoveState);
+
+            MoveState = null;
+        }
+        
         if (Sprint != null)
         {
             Sprint->Dispose();
@@ -72,15 +81,6 @@ public unsafe class EditorCameraIntents : IDisposable
 
             Sprint = null;
         }
-
-        if (Move != null)
-        {
-            Move->Dispose();
-            NativeMemory.Free(Move);
-
-            Move = null;
-        }
-
 
         if (MoveForward != null)
         {
