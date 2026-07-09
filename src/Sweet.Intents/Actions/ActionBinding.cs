@@ -1,13 +1,13 @@
 namespace Sweet.Intents.Actions;
 
-public unsafe struct Action
+public unsafe struct ActionBinding
 {
     public ActionState* State;
     public byte ClauseIndex;
 
-    public bool IsDowned;
+    public bool Held;
 
-    public Action(ActionState* state, byte clauseIndex)
+    public ActionBinding(ActionState* state, byte clauseIndex)
     {
         State = state;
         ClauseIndex = clauseIndex;

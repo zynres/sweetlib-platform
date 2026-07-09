@@ -7,7 +7,9 @@ public struct ActionState : IDisposable
     public UnsafeList<Clause> Clauses;
 
     public byte SatisfiedClauses;
-    public readonly bool IsDown => SatisfiedClauses == Clauses.Length;
+    
+    public readonly bool IsHeld => SatisfiedClauses == Clauses.Length;
+    public bool IsRelease;
 
     public ActionState(byte groupCapacity)
     {
